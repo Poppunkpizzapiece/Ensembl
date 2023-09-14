@@ -1,0 +1,76 @@
+title: "Ensembl_data"
+output: html_document
+date: "2023-09-12"
+---
+
+```{r}
+
+library(biomaRt)
+
+```
+
+
+```{r}
+input <- read.table("C:/Users/annal/Desktop/CHR Start Stop Strand.txt")
+ensembl <- useEnsembl(biomart = "genes")
+ensembl <- useDataset(dataset = "hsapiens_gene_ensembl", mart = ensembl)
+
+list <- as.list(input)
+start <- as.numeric(list$V2[-1])
+end <- as.numeric(list$V3[-1])
+chrom <- as.numeric(list$V1[-1])
+strand <- list$V4[-1]
+# Check Data Types
+valid_data_types <- list(is.numeric(chrom), is.numeric(start), is.numeric(end), is.character(strand))
+# Check Strand Values
+valid_strands <- strand %in% c("+1", "-1")
+valid_entries <- valid_data_types[[1]] & valid_data_types[[2]] & valid_data_types[[3]] & valid_data_types[[4]] & valid_strands
+# Filter vectors based on valid entries
+chrom <- chrom[valid_entries]
+start <- start[valid_entries]
+end <- end[valid_entries]
+strand <- strand[valid_entries]
+# Assuming 'chrom', 'start', and 'end' are vectors, check their types
+if (!all(is.numeric(start))) {
+  stop("The 'start' values should be numeric integers.")
+}
+
+
+if (length(chrom) != length(start) || length(start) != length(end) || length(end) != length(strand)) {
+  stop("The vectors chrom, start, end, and strand should have the same length.")
+}
+valid_strands <- c("+1", "-1")
+
+if (!all(strand %in% valid_strands)) {
+  stop("Strand values should be either '+1' or '-1'.")
+}
+
+# Assuming 'chrom', 'start', 'end', and 'strand' are vectors
+
+# Create an empty list to store the results
+gene_info_list <- list()
+
+# Iterate over the indices
+for (i in seq_along(chrom)[1:250]) {
+  # Create coordinates for the current index
+  coordinates <- paste(chrom[i], start[i], end[i], strand[i], sep=":")
+  
+  # Query Ensembl
+  current_gene_info <- getBM(attributes = c('ensembl_gene_id','external_gene_name', 'chromosome_name', 'start_position', 'end_position'), 
+                             filters = c('chromosome_name', 'start', 'end', 'strand'),
+                             values = list(chrom=chrom[i], start=start[i], end=end[i], strand=strand[i]), 
+                             mart = ensembl)
+  #print(current_gene_info)  # Add this line to inspect the results
+  
+  # Add the current query result to the list
+  gene_info_list[[i]] <- current_gene_info
+
+# Print a message to track progress
+  cat("Completed iteration", i, "out of", length(chrom), "\n")
+}
+
+# Combine all the results into a single data frame
+gene_info <- do.call(rbind, gene_info_list)
+
+
+```
