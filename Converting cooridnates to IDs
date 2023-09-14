@@ -11,7 +11,7 @@ library(biomaRt)
 
 
 ```{r}
-input <- read.table("C:/Users/annal/Desktop/CHR Start Stop Strand.txt")
+input <- read.table("C:/your path/CHR Start Stop Strand.txt")
 ensembl <- useEnsembl(biomart = "genes")
 ensembl <- useDataset(dataset = "hsapiens_gene_ensembl", mart = ensembl)
 
